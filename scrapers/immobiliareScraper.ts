@@ -45,7 +45,7 @@ export async function scrapeImmobiliare(url = DEFAULT_URL): Promise<ScrapedPrope
   console.log(`[immobiliare] Fetching: ${url}`)
 
   const html = await fetchHtml(url)
-  const nextData = extractNextData(html)
+  const nextData: NextData | null = extractNextData(html)
 
   if (!nextData) {
     console.warn('[immobiliare] __NEXT_DATA__ not found in page — site may have changed structure')
@@ -53,14 +53,14 @@ export async function scrapeImmobiliare(url = DEFAULT_URL): Promise<ScrapedPrope
   }
 
   if (DEBUG) {
-    const pp = (nextData as { props?: { pageProps?: unknown } })?.props?.pageProps
-    console.log('[immobiliare] Raw __NEXT_DATA__ keys:', Object.keys((pp as Record<string, unknown>) ?? {}))
+    const pp = nextData?.props?.pageProps ?? {}
+    console.log('[immobiliare] Raw __NEXT_DATA__ keys:', Object.keys(pp))
   }
 
   // Navigate to results array (handles multiple known path variants)
   const results =
-    (nextData?.props?.pageProps as { searchResult?: { results?: unknown[] } })?.searchResult?.results ??
-    (nextData?.props?.pageProps as { results?: unknown[] })?.results ??
+    nextData?.props?.pageProps?.searchResult?.results ??
+    nextData?.props?.pageProps?.results ??
     []
 
   if (DEBUG) {
@@ -158,11 +158,20 @@ async function fetchHtml(url: string): Promise<string> {
   return res.text()
 }
 
-function extractNextData(html: string): Record<string, unknown> | null {
+interface NextData {
+  props?: {
+    pageProps?: {
+      searchResult?: { results?: unknown[] }
+      results?: unknown[]
+    }
+  }
+}
+
+function extractNextData(html: string): NextData | null {
   const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
   if (!match) return null
   try {
-    return JSON.parse(match[1]) as Record<string, unknown>
+    return JSON.parse(match[1]) as NextData
   } catch {
     return null
   }
