@@ -22,23 +22,22 @@ export default function PropertyCard({ property }: Props) {
         isAuction ? 'border-purple-200 hover:border-purple-300' : 'border-gray-200 hover:border-gray-300'
       }`}>
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+        <div>
+          <div className="flex items-start justify-between gap-2">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-400">{city}</p>
-            <h3 className="mt-0.5 truncate text-sm font-semibold text-gray-900 group-hover:text-blue-600">
-              {title}
-            </h3>
-            <p className="mt-0.5 truncate text-xs text-gray-500">{address}</p>
+            <div className="shrink-0 text-right">
+              {isAuction && (
+                <p className="text-xs font-medium text-purple-600">Base d&apos;asta</p>
+              )}
+              <p className="text-base font-bold text-gray-900">
+                €{price.toLocaleString('it-IT')}
+              </p>
+              <p className="text-xs text-gray-500">{sqm} m²</p>
+            </div>
           </div>
-          <div className="shrink-0 text-right">
-            {isAuction && (
-              <p className="text-xs font-medium text-purple-600">Base d&apos;asta</p>
-            )}
-            <p className="text-lg font-bold text-gray-900">
-              €{price.toLocaleString('it-IT')}
-            </p>
-            <p className="text-xs text-gray-500">{sqm} m²</p>
-          </div>
+          <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-900 group-hover:text-blue-600">
+            {title}
+          </h3>
         </div>
 
         {/* Auction estimated final price */}
