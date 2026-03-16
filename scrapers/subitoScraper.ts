@@ -33,7 +33,7 @@ const HEADERS: Record<string, string> = {
 export async function scrapeSubito(url = SEARCH_URL): Promise<ScrapedProperty[]> {
   console.log(`[subito] Fetching: ${url}`)
   const html = await fetchHtml(url)
-  const nextData = extractNextData(html)
+  const nextData: SubitoNextData | null = extractNextData(html)
 
   if (!nextData) {
     console.warn('[subito] __NEXT_DATA__ not found')
@@ -90,11 +90,23 @@ async function fetchHtml(url: string): Promise<string> {
   return res.text()
 }
 
-function extractNextData(html: string): Record<string, unknown> | null {
+interface SubitoNextData {
+  props?: {
+    pageProps?: {
+      initialState?: {
+        items?: {
+          list?: unknown[]
+        }
+      }
+    }
+  }
+}
+
+function extractNextData(html: string): SubitoNextData | null {
   const match = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
   if (!match) return null
   try {
-    return JSON.parse(match[1]) as Record<string, unknown>
+    return JSON.parse(match[1]) as SubitoNextData
   } catch {
     return null
   }

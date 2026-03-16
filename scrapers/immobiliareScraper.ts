@@ -100,6 +100,8 @@ export async function scrapeImmobiliare(url = DEFAULT_URL): Promise<ScrapedPrope
         sqm,
         sourceUrl: listingUrl,
         sourceSite: 'immobiliare.it',
+        isAuction: false,
+        auctionDate: null,
       })
     } catch (err) {
       if (DEBUG) console.warn('[immobiliare] Skipped listing due to parse error:', err)
