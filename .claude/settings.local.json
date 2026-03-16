@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude remote-control:*)",
+      "Bash(npm install:*)",
+      "Bash(pg_isready)",
+      "Bash(psql -U postgres -c \"SELECT 1\")",
+      "Bash(psql -c \"SELECT current_user, version\\(\\);\")",
+      "Bash(psql -U salvatorecorsa postgres -c \"SELECT current_user;\")",
+      "Bash(psql -U salvatorecorsa postgres -c \"CREATE DATABASE dealestate;\")",
+      "Bash(npx prisma:*)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:www.immobiliare.it)",
+      "WebFetch(domain:www.casa.it)",
+      "WebFetch(domain:www.wikicasa.it)",
+      "WebFetch(domain:www.subito.it)",
+      "Bash(curl -s http://localhost:3000/api/properties)",
+      "Bash(python3 -m json.tool)",
+      "Bash(python3 -c \":*)",
+      "Bash(npx tsx -e \":*)",
+      "Bash(npx tsx:*)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f''''Properties in DB: {len\\(d\\)}''''\\); print\\(''''Top 3:'''', [p[''''title''''][:40] for p in d[:3]]\\)\")"
+    ]
+  }
+}
