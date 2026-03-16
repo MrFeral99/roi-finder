@@ -53,7 +53,8 @@ export async function scrapeImmobiliare(url = DEFAULT_URL): Promise<ScrapedPrope
   }
 
   if (DEBUG) {
-    console.log('[immobiliare] Raw __NEXT_DATA__ keys:', Object.keys(nextData?.props?.pageProps ?? {}))
+    const pp = (nextData as { props?: { pageProps?: unknown } })?.props?.pageProps
+    console.log('[immobiliare] Raw __NEXT_DATA__ keys:', Object.keys((pp as Record<string, unknown>) ?? {}))
   }
 
   // Navigate to results array (handles multiple known path variants)
