@@ -42,7 +42,7 @@ export default function Header() {
           <nav className="flex items-center gap-3">
             {session ? (
               <span className="hidden text-sm text-gray-500 sm:block">
-                {session.user.name ?? session.user.email}
+                {session.user.name ?? '—'}
               </span>
             ) : (
               <>
