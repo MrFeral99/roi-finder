@@ -42,24 +42,24 @@ export async function POST(request: NextRequest) {
     await transporter.sendMail({
       from: `DealEstate <${process.env.SMTP_USER}>`,
       to: email,
-      subject: 'Sei nella waitlist di DealEstate 🏠',
+      subject: 'Accesso alla beta DealEstate 👇',
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff">
-          <h1 style="font-size:22px;font-weight:700;color:#111">Benvenuto in DealEstate!</h1>
-          <p style="color:#555;line-height:1.6">
-            Sei ufficialmente nella waitlist. Ogni settimana riceverai le migliori opportunità immobiliari
-            ${city ? `a <strong>${city}</strong>` : 'in Italia'} con ROI &gt; 8% e sconto &gt; 15% sul prezzo di mercato.
-          </p>
-          <p style="color:#555;line-height:1.6">
-            Nel frattempo puoi già esplorare alcune opportunità gratuite:
-          </p>
-          <a href="https://roi-finder.vercel.app/properties"
-             style="display:inline-block;margin-top:8px;padding:12px 24px;background:#2563eb;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px">
-            Vedi le prime 5 opportunità →
+          <p style="color:#111;line-height:1.8;font-size:15px">Ciao! 🙌</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">Grazie per esserti iscritto alla beta di DealEstate.</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">Puoi accedere qui:</p>
+          <a href="https://roi-finder.vercel.app"
+             style="display:inline-block;margin:8px 0 24px;padding:12px 24px;background:#2563eb;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px">
+            roi-finder.vercel.app →
           </a>
-          <p style="margin-top:32px;font-size:12px;color:#aaa">
-            DealEstate — Analisi ROI su proprietà immobiliari italiane.
+          <p style="color:#111;line-height:1.8;font-size:15px">Sto aiutando personalmente i primi utenti a trovare immobili interessanti.</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">
+            Se vuoi, posso cercarti io 2–3 opportunità in base a:<br/>
+            - budget<br/>
+            - città<br/>
+            - obiettivo (affitto, flipping, ecc.)
           </p>
+          <p style="color:#111;line-height:1.8;font-size:15px">Ti va? 🙂</p>
         </div>
       `,
     }).catch(() => null) // non bloccare la risposta se la mail fallisce
