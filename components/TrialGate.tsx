@@ -27,7 +27,7 @@ export default function TrialGate() {
 
   return (
     <TrialFeedbackModal
-      onSubmitted={() => setShowModal(false)}
+      onSubmitted={() => { setShowModal(false); window.location.reload() }}
     />
   )
 }
