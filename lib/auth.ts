@@ -29,12 +29,21 @@ export const authOptions: NextAuthOptions = {
   ],
   session: { strategy: 'jwt' },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) token.userId = user.id
+    async jwt({ token, user, trigger, session }) {
+      if (user) {
+        token.userId = user.id
+        token.name   = user.name
+      }
+      if (trigger === 'update' && session?.name !== undefined) {
+        token.name = session.name
+      }
       return token
     },
     async session({ session, token }) {
-      if (session.user) session.user.id = token.userId as string
+      if (session.user) {
+        session.user.id   = token.userId as string
+        session.user.name = token.name as string | null
+      }
       return session
     },
   },
