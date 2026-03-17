@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
   if (process.env.RESEND_API_KEY) {
     await resend.emails.send({
-      from: 'DealEstate <noreply@dealestate.it>',
+      from: 'DealEstate <onboarding@resend.dev>',
       to: email,
       subject: 'Sei nella waitlist di DealEstate 🏠',
       html: `
