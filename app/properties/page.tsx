@@ -61,8 +61,8 @@ export default function PropertiesPage() {
     if (prefsLoaded) fetchProperties(filters)
   }, [filters, fetchProperties, prefsLoaded])
 
-  const visible = properties.slice(0, FREE_LIMIT)
-  const locked = properties.length > FREE_LIMIT
+  const visible = isLoggedIn ? properties : properties.slice(0, FREE_LIMIT)
+  const locked = !isLoggedIn && properties.length > FREE_LIMIT
   const hotDeals = properties.filter((p) => p.score > 10)
 
   return (
