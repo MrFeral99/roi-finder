@@ -18,15 +18,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Beta
               </span>
             </a>
-            <nav className="flex items-center gap-4">
-              <a href="/properties" className="text-sm text-gray-600 transition hover:text-gray-900">
+            <nav className="flex items-center gap-3">
+              <a href="/properties" className="hidden text-sm text-gray-600 transition hover:text-gray-900 sm:block">
                 Opportunità
               </a>
               <a
                 href="/#waitlist"
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 sm:px-4 sm:text-sm"
               >
-                Unisciti alla Waitlist
+                <span className="sm:hidden">Waitlist</span>
+                <span className="hidden sm:inline">Unisciti alla Waitlist</span>
               </a>
             </nav>
           </div>

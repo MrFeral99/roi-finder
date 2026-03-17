@@ -108,7 +108,7 @@ export default async function LandingPage() {
                 </div>
               </div>
 
-              <div className="grid shrink-0 grid-cols-3 gap-4 sm:text-right">
+              <div className="grid grid-cols-3 gap-4 sm:shrink-0 sm:text-right">
                 <Stat label="Prezzo" value={`€${dealOfWeek.price.toLocaleString('it-IT')}`} />
                 <Stat
                   label="ROI"
