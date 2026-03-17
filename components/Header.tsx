@@ -8,6 +8,7 @@ import { useSession, signOut } from 'next-auth/react'
 const NAV_LINKS = [
   { href: '/properties', label: 'Opportunità', icon: '🏠' },
   { href: '/saved',      label: 'Salvate',     icon: '🔖' },
+  { href: '/account',    label: 'Account',     icon: '👤' },
 ]
 
 export default function Header() {
