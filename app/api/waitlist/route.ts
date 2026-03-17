@@ -46,20 +46,28 @@ export async function POST(request: NextRequest) {
       html: `
         <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;background:#fff">
           <p style="color:#111;line-height:1.8;font-size:15px">Ciao! 🙌</p>
-          <p style="color:#111;line-height:1.8;font-size:15px">Grazie per esserti iscritto alla beta di DealEstate.</p>
-          <p style="color:#111;line-height:1.8;font-size:15px">Puoi accedere qui:</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">Grazie per esserti iscritto alla lista di attesa di DealEstate.</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">Ho attivato per te un accesso gratuito di 7 giorni alla beta 👇</p>
           <a href="https://roi-finder.vercel.app"
              style="display:inline-block;margin:8px 0 24px;padding:12px 24px;background:#2563eb;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px">
             DealEstate →
           </a>
-          <p style="color:#111;line-height:1.8;font-size:15px">Sto aiutando personalmente i primi utenti a trovare immobili interessanti.</p>
           <p style="color:#111;line-height:1.8;font-size:15px">
-            Se vuoi, posso cercarti io 2–3 opportunità in base a:<br/>
+            Con DealEstate puoi:<br/>
+            - trovare immobili sottovalutati<br/>
+            - vedere ROI e rendimento stimato<br/>
+            - individuare le migliori opportunità in pochi secondi
+          </p>
+          <p style="color:#111;line-height:1.8;font-size:15px">👉 Durante questi 7 giorni puoi usare tutto liberamente.</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">
+            Sto seguendo personalmente i primi utenti, quindi se vuoi posso anche aiutarti a trovare 2–3 immobili interessanti in base a:<br/>
             - budget<br/>
             - città<br/>
-            - obiettivo (affitto, flipping, ecc.)
+            - tipo di investimento (affitto, flipping, ecc.)
           </p>
-          <p style="color:#111;line-height:1.8;font-size:15px">Ti va? 🙂</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">Ti basta rispondere a questa mail 🙂</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">Ogni feedback è super prezioso in questa fase.</p>
+          <p style="color:#111;line-height:1.8;font-size:15px">A presto</p>
         </div>
       `,
     }).catch(() => null) // non bloccare la risposta se la mail fallisce
