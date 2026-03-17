@@ -36,6 +36,7 @@ export default function PropertiesPage() {
   const [error, setError]             = useState<string | null>(null)
   const [prefsLoaded, setPrefsLoaded] = useState(false)
   const [savedIds, setSavedIds]       = useState<Set<string>>(new Set())
+  const [trialExpired, setTrialExpired] = useState(false)
 
   // Load user preferences and pre-fill filters
   useEffect(() => {
@@ -44,9 +45,11 @@ export default function PropertiesPage() {
     Promise.all([
       fetch('/api/preferences').then((r) => r.json()),
       fetch('/api/saved').then((r) => r.json()),
-    ]).then(([prefs, saved]) => {
+      fetch('/api/trial').then((r) => r.json()),
+    ]).then(([prefs, saved, trial]) => {
       if (prefs) setFilters({ city: prefs.city ?? undefined, maxPrice: prefs.maxBudget ?? undefined })
       if (saved?.savedIds) setSavedIds(new Set(saved.savedIds))
+      if (trial?.expired && trial?.hasFeedback) setTrialExpired(true)
     }).finally(() => setPrefsLoaded(true))
   }, [isLoggedIn, status])
 
@@ -85,6 +88,8 @@ export default function PropertiesPage() {
   const visible  = isLoggedIn ? properties : properties.slice(0, FREE_LIMIT)
   const locked   = !isLoggedIn && total > FREE_LIMIT
   const hotDeals = properties.filter((p) => p.score > 10)
+
+  if (trialExpired) return <Paywall />
 
   return (
     <div>
@@ -239,6 +244,35 @@ export default function PropertiesPage() {
           <WaitlistForm variant="inline" />
         </div>
       )}
+    </div>
+  )
+}
+
+function Paywall() {
+  return (
+    <div className="mx-auto max-w-md py-20 text-center">
+      <div className="rounded-2xl border border-gray-200 bg-white p-10 shadow-sm">
+        <div className="mb-4 text-4xl">🔒</div>
+        <h2 className="text-xl font-bold text-gray-900">Periodo di prova terminato</h2>
+        <p className="mt-2 text-sm text-gray-500">
+          Grazie per aver usato DealEstate! Il tuo accesso alle opportunità è scaduto.
+        </p>
+        <p className="mt-4 text-sm text-gray-500">
+          Puoi continuare a consultare le proprietà che hai salvato.
+        </p>
+        <a
+          href="/saved"
+          className="mt-6 inline-block rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+        >
+          Vai alle proprietà salvate →
+        </a>
+        <p className="mt-6 text-xs text-gray-400">
+          Vuoi continuare ad usare DealEstate?{' '}
+          <a href="mailto:dealestateroi@libero.it" className="text-blue-500 hover:underline">
+            Scrivici
+          </a>
+        </p>
+      </div>
     </div>
   )
 }
