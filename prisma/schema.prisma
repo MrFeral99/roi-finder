@@ -13,6 +13,7 @@ model User {
   email       String           @unique
   name        String?
   image       String?
+  password    String?
   preferences UserPreferences?
   createdAt   DateTime         @default(now())
 }
