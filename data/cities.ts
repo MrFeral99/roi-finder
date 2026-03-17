@@ -134,7 +134,7 @@ export const CITIES: CityConfig[] = [
   { name: 'Vicenza',          idealistaSlug: 'vicenza-vicenza' },
 ]
 
-export const BATCH_SIZE = 10
+export const BATCH_SIZE = 4
 export const NUM_BATCHES = Math.ceil(CITIES.length / BATCH_SIZE)
 
 /** Returns today's batch of cities using day-of-year rotation. */

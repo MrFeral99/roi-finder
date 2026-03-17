@@ -4,7 +4,7 @@ import { scrapeIdealista, ScrapedProperty } from '@/scrapers/idealistaScraper'
 import { scrapeSubito } from '@/scrapers/subitoScraper'
 import { getTodaysBatch } from '@/data/cities'
 
-export const maxDuration = 60
+export const maxDuration = 10
 
 const IDEALISTA_BASE = 'https://www.idealista.it/vendita-case'
 const SUBITO_URL = 'https://www.subito.it/annunci-italia/vendita/appartamenti/'
