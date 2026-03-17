@@ -3,10 +3,12 @@ import { prisma } from '@/lib/prisma'
 import nodemailer from 'nodemailer'
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.libero.it',
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
   },
 })
 
@@ -36,9 +38,9 @@ export async function POST(request: NextRequest) {
 
   await prisma.waitlistUser.create({ data: { email, city } })
 
-  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+  if (process.env.SMTP_USER && process.env.SMTP_PASSWORD) {
     await transporter.sendMail({
-      from: `DealEstate <${process.env.GMAIL_USER}>`,
+      from: `DealEstate <${process.env.SMTP_USER}>`,
       to: email,
       subject: 'Sei nella waitlist di DealEstate 🏠',
       html: `
