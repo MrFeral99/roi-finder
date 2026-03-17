@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
           <p style="color:#111;line-height:1.8;font-size:15px">Ciao! 🙌</p>
           <p style="color:#111;line-height:1.8;font-size:15px">Grazie per esserti iscritto alla lista di attesa di DealEstate.</p>
           <p style="color:#111;line-height:1.8;font-size:15px">Ho attivato per te un accesso gratuito di 7 giorni alla beta 👇</p>
-          <a href="https://roi-finder.vercel.app"
+          <a href="https://roi-finder.vercel.app/register"
              style="display:inline-block;margin:8px 0 24px;padding:12px 24px;background:#2563eb;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px">
             DealEstate →
           </a>
