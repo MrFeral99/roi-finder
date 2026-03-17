@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
+import { signIn } from 'next-auth/react'
 import { PropertyWithMetrics, FilterParams } from '@/types'
 import PropertyCard from '@/components/PropertyCard'
 import Filters from '@/components/Filters'
@@ -9,10 +11,32 @@ import WaitlistForm from '@/components/WaitlistForm'
 const FREE_LIMIT = 5
 
 export default function PropertiesPage() {
+  const { data: session, status } = useSession()
+  const isLoggedIn = status === 'authenticated'
+
   const [properties, setProperties] = useState<PropertyWithMetrics[]>([])
   const [filters, setFilters] = useState<FilterParams>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [prefsLoaded, setPrefsLoaded] = useState(false)
+
+  // Load user preferences and pre-fill filters
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!isLoggedIn) { setPrefsLoaded(true); return }
+
+    fetch('/api/preferences')
+      .then((r) => r.json())
+      .then((prefs) => {
+        if (prefs) {
+          setFilters({
+            city: prefs.city ?? undefined,
+            maxPrice: prefs.maxBudget ?? undefined,
+          })
+        }
+      })
+      .finally(() => setPrefsLoaded(true))
+  }, [isLoggedIn, status])
 
   const fetchProperties = useCallback(async (f: FilterParams) => {
     setLoading(true)
@@ -33,7 +57,9 @@ export default function PropertiesPage() {
     }
   }, [])
 
-  useEffect(() => { fetchProperties(filters) }, [filters, fetchProperties])
+  useEffect(() => {
+    if (prefsLoaded) fetchProperties(filters)
+  }, [filters, fetchProperties, prefsLoaded])
 
   const visible = properties.slice(0, FREE_LIMIT)
   const locked = properties.length > FREE_LIMIT
@@ -93,30 +119,35 @@ export default function PropertiesPage() {
           </div>
 
           {/* Gate */}
-          {locked && (
+          {locked && !isLoggedIn && (
             <div className="mt-6 space-y-4">
-              {/* Blurred preview of next row */}
+              {/* Blurred preview */}
               <div className="pointer-events-none grid select-none gap-4 opacity-40 blur-sm sm:grid-cols-2 lg:grid-cols-3">
                 {properties.slice(FREE_LIMIT, FREE_LIMIT + 3).map((p) => (
                   <PropertyCard key={p.id} property={p} />
                 ))}
               </div>
 
-              {/* Gate block */}
-              <div className="relative -mt-8">
-                <WaitlistForm variant="gate" />
+              {/* Login CTA */}
+              <div className="relative -mt-8 rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-sm">
+                <p className="text-lg font-bold text-gray-900">
+                  {properties.length - FREE_LIMIT} opportunità sbloccate con il login
+                </p>
+                <p className="mt-1 text-sm text-gray-500">Accedi gratis con Google per vedere tutti gli annunci.</p>
+                <button
+                  onClick={() => signIn('google', { callbackUrl: '/properties' })}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  Login con Google — è gratis
+                </button>
               </div>
-
-              <p className="text-center text-xs text-gray-400">
-                {properties.length - FREE_LIMIT} opportunità bloccate · Sblocca tutto gratis
-              </p>
             </div>
           )}
         </>
       )}
 
-      {/* Inline newsletter nudge (always visible at bottom) */}
-      {!loading && (
+      {/* Inline newsletter nudge — only for non-logged users */}
+      {!loading && !isLoggedIn && (
         <div className="mt-12">
           <WaitlistForm variant="inline" />
         </div>

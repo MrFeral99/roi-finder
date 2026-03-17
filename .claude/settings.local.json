@@ -20,7 +20,12 @@
       "Bash(npx tsx -e \":*)",
       "Bash(npx tsx:*)",
       "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f''''Properties in DB: {len\\(d\\)}''''\\); print\\(''''Top 3:'''', [p[''''title''''][:40] for p in d[:3]]\\)\")"
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f''''Properties in DB: {len\\(d\\)}''''\\); print\\(''''Top 3:'''', [p[''''title''''][:40] for p in d[:3]]\\)\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(curl:*)",
+      "Bash(npm list:*)"
     ]
   }
 }
