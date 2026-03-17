@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { computeMetrics } from '@/lib/computeMetrics'
 import { PropertyWithMetrics } from '@/types'
@@ -28,6 +31,8 @@ async function getData(): Promise<{
 }
 
 export default async function LandingPage() {
+  const session = await getServerSession(authOptions)
+  if (session) redirect('/properties')
   const { dealOfWeek, sampleProperties, waitlistCount } = await getData()
 
   return (

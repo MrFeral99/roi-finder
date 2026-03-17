@@ -9,13 +9,24 @@ datasource db {
 }
 
 model User {
-  id          String           @id @default(cuid())
-  email       String           @unique
-  name        String?
-  image       String?
-  password    String?
-  preferences UserPreferences?
-  createdAt   DateTime         @default(now())
+  id              String            @id @default(cuid())
+  email           String            @unique
+  name            String?
+  image           String?
+  password        String?
+  preferences     UserPreferences?
+  savedProperties SavedProperty[]
+  createdAt       DateTime          @default(now())
+}
+
+model SavedProperty {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
 }
 
 model UserPreferences {

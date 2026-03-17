@@ -28,24 +28,26 @@ export default function PropertiesPage() {
   const { data: session, status } = useSession()
   const isLoggedIn = status === 'authenticated'
 
-  const [response, setResponse]     = useState<ApiResponse | null>(null)
-  const [filters, setFilters]       = useState<FilterParams>({})
-  const [sort, setSort]             = useState('score')
-  const [page, setPage]             = useState(1)
-  const [loading, setLoading]       = useState(true)
-  const [error, setError]           = useState<string | null>(null)
+  const [response, setResponse]       = useState<ApiResponse | null>(null)
+  const [filters, setFilters]         = useState<FilterParams>({})
+  const [sort, setSort]               = useState('score')
+  const [page, setPage]               = useState(1)
+  const [loading, setLoading]         = useState(true)
+  const [error, setError]             = useState<string | null>(null)
   const [prefsLoaded, setPrefsLoaded] = useState(false)
+  const [savedIds, setSavedIds]       = useState<Set<string>>(new Set())
 
   // Load user preferences and pre-fill filters
   useEffect(() => {
     if (status === 'loading') return
     if (!isLoggedIn) { setPrefsLoaded(true); return }
-    fetch('/api/preferences')
-      .then((r) => r.json())
-      .then((prefs) => {
-        if (prefs) setFilters({ city: prefs.city ?? undefined, maxPrice: prefs.maxBudget ?? undefined })
-      })
-      .finally(() => setPrefsLoaded(true))
+    Promise.all([
+      fetch('/api/preferences').then((r) => r.json()),
+      fetch('/api/saved').then((r) => r.json()),
+    ]).then(([prefs, saved]) => {
+      if (prefs) setFilters({ city: prefs.city ?? undefined, maxPrice: prefs.maxBudget ?? undefined })
+      if (saved?.savedIds) setSavedIds(new Set(saved.savedIds))
+    }).finally(() => setPrefsLoaded(true))
   }, [isLoggedIn, status])
 
   const fetchProperties = useCallback(async (f: FilterParams, s: string, p: number) => {
@@ -144,7 +146,20 @@ export default function PropertiesPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((p) => (
-              <PropertyCard key={p.id} property={p} />
+              <PropertyCard
+                key={p.id}
+                property={p}
+                isSaved={isLoggedIn ? savedIds.has(p.id) : undefined}
+                onSaveToggle={isLoggedIn ? async (id) => {
+                  if (savedIds.has(id)) {
+                    await fetch(`/api/saved/${id}`, { method: 'DELETE' })
+                    setSavedIds((prev) => { const s = new Set(prev); s.delete(id); return s })
+                  } else {
+                    await fetch('/api/saved', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ propertyId: id }) })
+                    setSavedIds((prev) => new Set(prev).add(id))
+                  }
+                } : undefined}
+              />
             ))}
           </div>
 

@@ -4,9 +4,11 @@ import OpportunityBadge from './OpportunityBadge'
 
 interface Props {
   property: PropertyWithMetrics
+  isSaved?: boolean
+  onSaveToggle?: (propertyId: string) => void
 }
 
-export default function PropertyCard({ property }: Props) {
+export default function PropertyCard({ property, isSaved, onSaveToggle }: Props) {
   const {
     id, title, city, address, price, sqm,
     estimatedRent, roi, discount, score,
@@ -25,7 +27,17 @@ export default function PropertyCard({ property }: Props) {
         <div>
           <div className="flex items-start justify-between gap-2">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-400">{city}</p>
-            <div className="shrink-0 text-right">
+            <div className="flex shrink-0 items-start gap-2">
+              {onSaveToggle && (
+                <button
+                  onClick={(e) => { e.preventDefault(); onSaveToggle(id) }}
+                  className="text-lg leading-none transition hover:scale-110"
+                  title={isSaved ? 'Rimuovi dai salvati' : 'Salva'}
+                >
+                  {isSaved ? '🔖' : '🏷️'}
+                </button>
+              )}
+              <div className="text-right">
               {isAuction && (
                 <p className="text-xs font-medium text-purple-600">Base d&apos;asta</p>
               )}
@@ -34,6 +46,7 @@ export default function PropertyCard({ property }: Props) {
               </p>
               <p className="text-xs text-gray-500">{sqm} m²</p>
             </div>
+          </div>
           </div>
           <h3 className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-900 group-hover:text-blue-600">
             {title}
