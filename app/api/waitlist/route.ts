@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+})
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -30,9 +36,9 @@ export async function POST(request: NextRequest) {
 
   await prisma.waitlistUser.create({ data: { email, city } })
 
-  if (process.env.RESEND_API_KEY) {
-    await resend.emails.send({
-      from: 'DealEstate <onboarding@resend.dev>',
+  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    await transporter.sendMail({
+      from: `DealEstate <${process.env.GMAIL_USER}>`,
       to: email,
       subject: 'Sei nella waitlist di DealEstate 🏠',
       html: `
