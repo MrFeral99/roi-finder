@@ -225,7 +225,7 @@ export default async function LandingPage() {
 
 function SampleCard({ property: p }: { property: PropertyWithMetrics }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-gray-400">{p.city}</p>
       <p className="mt-1 truncate text-sm font-semibold text-gray-900">{p.title}</p>
       <div className="mt-4 grid grid-cols-3 gap-2 border-t border-gray-100 pt-4">
