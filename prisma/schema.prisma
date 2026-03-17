@@ -14,9 +14,21 @@ model User {
   name            String?
   image           String?
   password        String?
+  trialEndsAt     DateTime?
   preferences     UserPreferences?
   savedProperties SavedProperty[]
+  feedback        UserFeedback?
   createdAt       DateTime          @default(now())
+}
+
+model UserFeedback {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  score        Int
+  priceRange   String
+  improvements String?
+  createdAt    DateTime @default(now())
 }
 
 model SavedProperty {
