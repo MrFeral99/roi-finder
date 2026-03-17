@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
           <p style="color:#111;line-height:1.8;font-size:15px">Puoi accedere qui:</p>
           <a href="https://roi-finder.vercel.app"
              style="display:inline-block;margin:8px 0 24px;padding:12px 24px;background:#2563eb;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px">
-            roi-finder.vercel.app →
+            DealEstate →
           </a>
           <p style="color:#111;line-height:1.8;font-size:15px">Sto aiutando personalmente i primi utenti a trovare immobili interessanti.</p>
           <p style="color:#111;line-height:1.8;font-size:15px">
