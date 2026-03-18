@@ -17,8 +17,32 @@ model User {
   trialEndsAt     DateTime?
   preferences     UserPreferences?
   savedProperties SavedProperty[]
+  myProperties    UserProperty[]
   feedback        UserFeedback?
   createdAt       DateTime          @default(now())
+}
+
+model UserProperty {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+
+  title            String
+  city             String
+  address          String?
+  price            Float
+  sqm              Float
+  monthlyRent      Float
+  status           String   @default("valutazione") // "valutazione" | "acquistato" | "scartato"
+  purchaseDate     String?
+  acquisitionCosts Float?
+  notes            String?
+  vacancyRate      Float    @default(8)
+  maintenanceRate  Float    @default(10)
+  annualCondoFees  Float    @default(0)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model UserFeedback {

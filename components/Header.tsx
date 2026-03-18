@@ -6,10 +6,11 @@ import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
 
 const NAV_LINKS = [
-  { href: '/properties',  label: 'Opportunità',    icon: '🏠' },
-  { href: '/saved',       label: 'Salvate',         icon: '🔖' },
-  { href: '/calcolatore', label: 'Calcolatore ROI', icon: '🧮' },
-  { href: '/account',     label: 'Account',         icon: '👤' },
+  { href: '/properties',    label: 'Opportunità',      icon: '🏠' },
+  { href: '/saved',         label: 'Salvate',           icon: '🔖' },
+  { href: '/mie-proprieta', label: 'Le mie proprietà',  icon: '🏘️' },
+  { href: '/calcolatore',   label: 'Calcolatore ROI',   icon: '🧮' },
+  { href: '/account',       label: 'Account',           icon: '👤' },
 ]
 
 export default function Header() {
