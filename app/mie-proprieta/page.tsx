@@ -676,6 +676,22 @@ export default function MieProprietaPage() {
                     </span>
                   </div>
                 </div>
+                <div className="mt-3 border-t border-blue-100 pt-3 space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Manutenzione</span>
+                    <span className="font-medium text-red-500">-€{previewROI.maintenanceCost.toLocaleString('it-IT')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Tasse (cedolare 21%)</span>
+                    <span className="font-medium text-red-500">-€{previewROI.taxes.toLocaleString('it-IT')}</span>
+                  </div>
+                  {Number(form.annualCondoFees) > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Spese condominiali</span>
+                      <span className="font-medium text-red-500">-€{Number(form.annualCondoFees).toLocaleString('it-IT')}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

@@ -505,9 +505,19 @@ export default function CalcolatoreROIPage() {
                   <span className="font-medium text-gray-900">€{result.effectiveRent.toLocaleString('it-IT')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Costi totali</span>
-                  <span className="font-medium text-red-500">-€{result.totalCosts.toLocaleString('it-IT')}</span>
+                  <span className="text-gray-500">Manutenzione</span>
+                  <span className="font-medium text-red-500">-€{result.maintenanceCost.toLocaleString('it-IT')}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Tasse (cedolare 21%)</span>
+                  <span className="font-medium text-red-500">-€{result.taxes.toLocaleString('it-IT')}</span>
+                </div>
+                {Number(annualCondoFees) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Spese condominiali</span>
+                    <span className="font-medium text-red-500">-€{Number(annualCondoFees).toLocaleString('it-IT')}</span>
+                  </div>
+                )}
                 <div className="flex justify-between border-t border-gray-200 pt-1.5">
                   <span className="font-medium text-gray-700">Reddito netto</span>
                   <span className={`font-bold ${result.netIncome >= 0 ? 'text-green-600' : 'text-red-500'}`}>

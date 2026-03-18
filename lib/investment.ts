@@ -25,6 +25,8 @@ export interface InvestmentResult {
   monthlyCashflow: number
   effectiveRent: number
   totalCosts: number
+  maintenanceCost: number
+  taxes: number
 }
 
 export function calculateRealROI(input: InvestmentInput): InvestmentResult {
@@ -56,6 +58,8 @@ export function calculateRealROI(input: InvestmentInput): InvestmentResult {
     monthlyCashflow: Math.round(monthlyCashflow),
     effectiveRent: Math.round(effectiveRent),
     totalCosts: Math.round(totalCosts),
+    maintenanceCost: Math.round(maintenanceCost),
+    taxes: Math.round(taxes),
   }
 }
 
