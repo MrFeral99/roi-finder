@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const {
     title, city, address, price, sqm, monthlyRent, status,
     purchaseDate, acquisitionCosts, notes, vacancyRate, maintenanceRate, annualCondoFees,
-    rentalMode, weeklyRates,
+    rentalMode, weeklyRates, mortgageAmount, mortgageRate, mortgageDurationYears,
   } = body
 
   if (!title || !city || !price || !sqm) {
@@ -48,6 +48,9 @@ export async function POST(request: NextRequest) {
       annualCondoFees: annualCondoFees != null ? Number(annualCondoFees) : 0,
       rentalMode: rentalMode ?? 'monthly',
       weeklyRates: weeklyRates ?? null,
+      mortgageAmount: mortgageAmount ?? null,
+      mortgageRate: mortgageRate ?? null,
+      mortgageDurationYears: mortgageDurationYears ?? null,
     },
   })
 

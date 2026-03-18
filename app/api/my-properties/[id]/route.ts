@@ -31,6 +31,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       annualCondoFees: body.annualCondoFees != null ? Number(body.annualCondoFees) : undefined,
       rentalMode: body.rentalMode,
       weeklyRates: body.weeklyRates ?? null,
+      mortgageAmount: body.mortgageAmount ?? null,
+      mortgageRate: body.mortgageRate ?? null,
+      mortgageDurationYears: body.mortgageDurationYears ?? null,
     },
   })
 

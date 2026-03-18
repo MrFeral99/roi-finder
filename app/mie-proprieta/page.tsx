@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { calculateRealROI, weeklyRatesToAnnualRent, WeeklyRate } from '@/lib/investment'
+import { calculateRealROI, calculateMortgage, weeklyRatesToAnnualRent, WeeklyRate } from '@/lib/investment'
 import rentByCity from '@/data/rentByCity.json'
 import pricePerSqmByCity from '@/data/pricePerSqmByCity.json'
 
@@ -31,6 +31,9 @@ interface UserProperty {
   annualCondoFees: number
   rentalMode: string
   weeklyRates?: Record<string, WeeklyRate | null> | null
+  mortgageAmount?: number | null
+  mortgageRate?: number | null
+  mortgageDurationYears?: number | null
   createdAt: string
 }
 
@@ -50,6 +53,10 @@ const EMPTY_FORM = {
   annualCondoFees: '',
   rentalMode: 'monthly' as 'monthly' | 'weekly',
   weeklyRates: emptyWeeklyRates(),
+  mortgageEnabled: false,
+  mortgageAmount: '',
+  mortgageRate: '',
+  mortgageDurationYears: '',
 }
 
 function roiColor(roi: number) {
@@ -191,6 +198,10 @@ export default function MieProprietaPage() {
       annualCondoFees: p.annualCondoFees ? String(p.annualCondoFees) : '',
       rentalMode: (p.rentalMode as 'monthly' | 'weekly') ?? 'monthly',
       weeklyRates: p.weeklyRates ?? emptyWeeklyRates(),
+      mortgageEnabled: p.mortgageAmount != null,
+      mortgageAmount: p.mortgageAmount != null ? String(p.mortgageAmount) : '',
+      mortgageRate: p.mortgageRate != null ? String(p.mortgageRate) : '',
+      mortgageDurationYears: p.mortgageDurationYears != null ? String(p.mortgageDurationYears) : '',
     })
     setRentOverridden(true)
     setShowForm(true)
@@ -243,6 +254,9 @@ export default function MieProprietaPage() {
       annualCondoFees: Number(form.annualCondoFees) || 0,
       rentalMode: form.rentalMode,
       weeklyRates: form.rentalMode === 'weekly' ? form.weeklyRates : null,
+      mortgageAmount: form.mortgageAmount ? Number(form.mortgageAmount) : null,
+      mortgageRate: form.mortgageRate ? Number(form.mortgageRate) : null,
+      mortgageDurationYears: form.mortgageDurationYears ? Number(form.mortgageDurationYears) : null,
     }
 
     try {
@@ -432,6 +446,58 @@ export default function MieProprietaPage() {
                   onChange={(e) => setForm((f) => ({ ...f, annualCondoFees: e.target.value }))}
                 />
               </div>
+            </div>
+
+            {/* Mortgage section */}
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <label className="flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.mortgageEnabled}
+                  onChange={(e) => setForm((f) => ({
+                    ...f,
+                    mortgageEnabled: e.target.checked,
+                    ...(e.target.checked ? {} : { mortgageAmount: '', mortgageRate: '', mortgageDurationYears: '' }),
+                  }))}
+                  className="h-4 w-4 rounded accent-blue-600"
+                />
+                <span className="text-sm font-semibold text-gray-700">Finanzia con un mutuo</span>
+              </label>
+              {form.mortgageEnabled && (
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Importo mutuo (€)</label>
+                    <input
+                      type="number"
+                      placeholder="es. 120000"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                      value={form.mortgageAmount}
+                      onChange={(e) => setForm((f) => ({ ...f, mortgageAmount: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Tasso (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="es. 4.5"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                      value={form.mortgageRate}
+                      onChange={(e) => setForm((f) => ({ ...f, mortgageRate: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Durata (anni)</label>
+                    <input
+                      type="number"
+                      placeholder="es. 25"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                      value={form.mortgageDurationYears}
+                      onChange={(e) => setForm((f) => ({ ...f, mortgageDurationYears: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Rental mode toggle */}
@@ -696,6 +762,21 @@ export default function MieProprietaPage() {
                         </span>
                       </div>
                     </div>
+                    {p.mortgageAmount && p.mortgageRate && p.mortgageDurationYears && (() => {
+                      const m = calculateMortgage(p.mortgageAmount, p.mortgageRate / 100, p.mortgageDurationYears)
+                      const cashflowWithMortgage = roi.monthlyCashflow - m.monthlyPayment
+                      return (
+                        <p className="mt-1.5 text-xs text-blue-600">
+                          Rata: <span className="font-semibold">€{m.monthlyPayment.toLocaleString('it-IT')}/mese</span>
+                          {' · '}
+                          Cashflow con mutuo: <span className={`font-semibold ${cashflowWithMortgage >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            €{cashflowWithMortgage.toLocaleString('it-IT')}/mese
+                          </span>
+                          {' · '}
+                          Durata: {p.mortgageDurationYears} anni
+                        </p>
+                      )
+                    })()}
                     {p.notes && (
                       <p className="mt-2 text-xs text-gray-500 italic">{p.notes}</p>
                     )}

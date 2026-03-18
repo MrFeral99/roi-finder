@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { calculateRealROI, weeklyRatesToAnnualRent, WeeklyRate } from '@/lib/investment'
+import { calculateRealROI, calculateMortgage, weeklyRatesToAnnualRent, WeeklyRate } from '@/lib/investment'
 import rentByCity from '@/data/rentByCity.json'
 import pricePerSqmByCity from '@/data/pricePerSqmByCity.json'
 
@@ -36,6 +36,10 @@ export default function CalcolatoreROIPage() {
   const [maintenanceRate, setMaintenanceRate] = useState(10)
   const [annualCondoFees, setAnnualCondoFees] = useState('')
   const [rentOverridden, setRentOverridden] = useState(false)
+  const [mortgageEnabled, setMortgageEnabled] = useState(false)
+  const [mortgageAmount, setMortgageAmount] = useState('')
+  const [mortgageRate, setMortgageRate] = useState('')
+  const [mortgageDurationYears, setMortgageDurationYears] = useState('')
 
   // Auto-fill rent when city or sqm changes (only monthly mode, unless overridden)
   useEffect(() => {
@@ -113,6 +117,26 @@ export default function CalcolatoreROIPage() {
     })
     return avg.roi
   }, [city, vacancyRate, maintenanceRate, rentalMode])
+
+  const mortgage = useMemo(() => {
+    if (!mortgageEnabled || !result) return null
+    const principal = Number(mortgageAmount)
+    const rate = Number(mortgageRate) / 100
+    const years = Number(mortgageDurationYears)
+    if (!principal || !rate || !years) return null
+    const m = calculateMortgage(principal, rate, years)
+    const downPayment = Number(price) - principal
+    const annualCashflowDuringMortgage = result.netIncome - m.monthlyPayment * 12
+    const cashOnCashROI = downPayment > 0
+      ? (annualCashflowDuringMortgage / downPayment) * 100
+      : 0
+    return {
+      ...m,
+      downPayment,
+      cashflowDuringMortgage: Math.round(result.monthlyCashflow - m.monthlyPayment),
+      cashOnCashROI: Math.round(cashOnCashROI * 10) / 10,
+    }
+  }, [mortgageEnabled, mortgageAmount, mortgageRate, mortgageDurationYears, result, price])
 
   const badge = result ? roiBadge(result.roi) : null
 
@@ -342,6 +366,55 @@ export default function CalcolatoreROIPage() {
           </p>
         </div>
 
+        {/* Mortgage section */}
+        <div className="border-b border-gray-100 p-6">
+          <label className="flex cursor-pointer items-center gap-3">
+            <input
+              type="checkbox"
+              checked={mortgageEnabled}
+              onChange={(e) => setMortgageEnabled(e.target.checked)}
+              className="h-4 w-4 rounded accent-blue-600"
+            />
+            <span className="text-sm font-semibold text-gray-700">Finanzia con un mutuo</span>
+          </label>
+
+          {mortgageEnabled && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-gray-600">Importo mutuo (€)</span>
+                <input
+                  type="number"
+                  placeholder="es. 120000"
+                  value={mortgageAmount}
+                  onChange={(e) => setMortgageAmount(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-gray-600">Tasso interesse (%)</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="es. 4.5"
+                  value={mortgageRate}
+                  onChange={(e) => setMortgageRate(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-gray-600">Durata (anni)</span>
+                <input
+                  type="number"
+                  placeholder="es. 25"
+                  value={mortgageDurationYears}
+                  onChange={(e) => setMortgageDurationYears(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
         {/* Results */}
         {result ? (
           <div className="p-6">
@@ -378,6 +451,42 @@ export default function CalcolatoreROIPage() {
                 valueClassName={result.netIncome >= 0 ? 'text-gray-900' : 'text-red-500'}
               />
             </div>
+
+            {/* Mortgage results */}
+            {mortgage && (
+              <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-blue-600">Con mutuo</p>
+                <p className="mb-3 text-sm text-gray-600">
+                  Acconto: <span className="font-semibold text-gray-900">€{mortgage.downPayment.toLocaleString('it-IT')}</span>
+                  {' · '}
+                  Rata mensile: <span className="font-semibold text-gray-900">€{mortgage.monthlyPayment.toLocaleString('it-IT')}</span>
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-xl border border-blue-100 bg-white p-3 text-center">
+                    <p className="text-xs text-gray-500">Cashflow con mutuo</p>
+                    <p className={`mt-1 text-base font-bold ${mortgage.cashflowDuringMortgage >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      €{mortgage.cashflowDuringMortgage.toLocaleString('it-IT')}/mese
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-blue-100 bg-white p-3 text-center">
+                    <p className="text-xs text-gray-500">Cashflow post-mutuo</p>
+                    <p className={`mt-1 text-base font-bold ${result.monthlyCashflow >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      €{result.monthlyCashflow.toLocaleString('it-IT')}/mese
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-blue-100 bg-white p-3 text-center">
+                    <p className="text-xs text-gray-500">ROI cash-on-cash</p>
+                    <p className={`mt-1 text-base font-bold ${mortgage.cashOnCashROI >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                      {mortgage.cashOnCashROI.toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-gray-500">
+                  Interessi totali: <span className="font-semibold text-gray-700">€{mortgage.totalInterest.toLocaleString('it-IT')}</span> su {mortgageDurationYears} anni
+                </p>
+                <p className="mt-1 text-xs text-gray-400">Il ROI cash-on-cash è il rendimento sul capitale proprio (acconto)</p>
+              </div>
+            )}
 
             {/* Breakdown */}
             <div className="mt-4 rounded-xl border border-gray-100 bg-gray-50 p-4">

@@ -59,6 +59,32 @@ export function calculateRealROI(input: InvestmentInput): InvestmentResult {
   }
 }
 
+export interface MortgageResult {
+  monthlyPayment: number
+  totalPaid: number
+  totalInterest: number
+}
+
+export function calculateMortgage(
+  principal: number,
+  annualRate: number,
+  years: number
+): MortgageResult {
+  if (annualRate === 0) {
+    const monthlyPayment = principal / (years * 12)
+    return { monthlyPayment, totalPaid: principal, totalInterest: 0 }
+  }
+  const r = annualRate / 12
+  const n = years * 12
+  const monthlyPayment = principal * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
+  const totalPaid = monthlyPayment * n
+  return {
+    monthlyPayment: Math.round(monthlyPayment),
+    totalPaid: Math.round(totalPaid),
+    totalInterest: Math.round(totalPaid - principal),
+  }
+}
+
 /** ROI medio di mercato per una città (usando prezzo e affitto medi per m²) */
 export function getCityAverageROI(
   marketPricePerSqm: number,
