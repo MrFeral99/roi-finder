@@ -6,9 +6,12 @@ import { prisma } from '@/lib/prisma'
 import { computeMetrics } from '@/lib/computeMetrics'
 import { getMarketPricePerSqm } from '@/lib/discountCalculator'
 import { AUCTION_MARKUP_MIN, AUCTION_MARKUP_MAX } from '@/lib/auctionEstimator'
+import { getCityAverageROI } from '@/lib/investment'
+import rentByCity from '@/data/rentByCity.json'
 import OpportunityBadge from '@/components/OpportunityBadge'
 import WaitlistForm from '@/components/WaitlistForm'
 import SaveButton from '@/components/SaveButton'
+import InvestmentSimulator from '@/components/investment/InvestmentSimulator'
 
 interface Props {
   params: { id: string }
@@ -24,6 +27,10 @@ export default async function PropertyDetailPage({ params }: Props) {
   const p = computeMetrics({ ...property, createdAt: property.createdAt.toISOString() })
   const marketPricePerSqm = getMarketPricePerSqm(p.city)
   const roiColor = p.roi > 8 ? 'text-green-600' : p.roi > 5 ? 'text-yellow-600' : 'text-gray-900'
+
+  const rentPerSqm = (rentByCity as Record<string, number>)[p.city] ?? 10
+  const cityAvgRoi = getCityAverageROI(marketPricePerSqm, rentPerSqm)
+  const simulatorDefaultPrice = p.estimatedFinalPrice ?? p.price
 
   const session = await getServerSession(authOptions)
   let isSaved = false
@@ -188,6 +195,15 @@ export default async function PropertyDetailPage({ params }: Props) {
             />
             <Row label="Punteggio opportunità" value={p.score.toFixed(1)} />
           </dl>
+        </div>
+
+        {/* Investment Simulator */}
+        <div className="border-t border-gray-100">
+          <InvestmentSimulator
+            defaultPrice={simulatorDefaultPrice}
+            defaultRent={p.estimatedRent}
+            cityAvgRoi={cityAvgRoi}
+          />
         </div>
 
         {/* CTA */}
