@@ -1,10 +1,17 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { calculateRealROI } from '@/lib/investment'
+import { calculateRealROI, weeklyRatesToAnnualRent, WeeklyRate } from '@/lib/investment'
 import rentByCity from '@/data/rentByCity.json'
 import pricePerSqmByCity from '@/data/pricePerSqmByCity.json'
 
 const CITIES = Object.keys(rentByCity as Record<string, number>).sort()
+const MONTH_NAMES = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
+
+function emptyWeeklyRates(): Record<string, WeeklyRate | null> {
+  const r: Record<string, WeeklyRate | null> = {}
+  for (let i = 1; i <= 12; i++) r[String(i)] = null
+  return r
+}
 
 function roiColor(roi: number) {
   if (roi > 7) return 'text-green-600'
@@ -19,22 +26,25 @@ function roiBadge(roi: number) {
 }
 
 export default function CalcolatoreROIPage() {
+  const [rentalMode, setRentalMode] = useState<'monthly' | 'weekly'>('monthly')
   const [city, setCity] = useState('')
   const [price, setPrice] = useState('')
   const [sqm, setSqm] = useState('')
   const [rent, setRent] = useState('')
+  const [weeklyRates, setWeeklyRates] = useState<Record<string, WeeklyRate | null>>(emptyWeeklyRates)
   const [vacancyRate, setVacancyRate] = useState(8)
   const [maintenanceRate, setMaintenanceRate] = useState(10)
   const [annualCondoFees, setAnnualCondoFees] = useState('')
   const [rentOverridden, setRentOverridden] = useState(false)
 
-  // Auto-fill rent when city or sqm changes (unless user has overridden)
+  // Auto-fill rent when city or sqm changes (only monthly mode, unless overridden)
   useEffect(() => {
+    if (rentalMode !== 'monthly') return
     if (!rentOverridden && city && sqm) {
       const rentPerSqm = (rentByCity as Record<string, number>)[city] ?? 10
       setRent(String(Math.round(rentPerSqm * Number(sqm))))
     }
-  }, [city, sqm, rentOverridden])
+  }, [city, sqm, rentOverridden, rentalMode])
 
   // Auto-fill price when city or sqm changes (only if price is empty)
   useEffect(() => {
@@ -44,10 +54,44 @@ export default function CalcolatoreROIPage() {
     }
   }, [city, sqm]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  function updateWeeklyRate(month: string, field: 'weeks' | 'rate', value: string) {
+    setWeeklyRates((prev) => {
+      const current = prev[month]
+      if (value === '') {
+        const otherField = field === 'weeks' ? 'rate' : 'weeks'
+        const otherVal = current ? current[otherField] : undefined
+        if (!otherVal) return { ...prev, [month]: null }
+        return { ...prev, [month]: { ...(current ?? { weeks: 4, rate: 0 }), [field]: 0 } }
+      }
+      return {
+        ...prev,
+        [month]: { ...(current ?? { weeks: 4, rate: 0 }), [field]: Number(value) },
+      }
+    })
+  }
+
+  const annualRentWeekly = useMemo(() => weeklyRatesToAnnualRent(weeklyRates), [weeklyRates])
+  const weeksRented = useMemo(
+    () => Object.values(weeklyRates).reduce((sum, m) => sum + (m ? m.weeks : 0), 0),
+    [weeklyRates]
+  )
+
   const result = useMemo(() => {
     const p = Number(price)
+    if (!p || p <= 0) return null
+
+    if (rentalMode === 'weekly') {
+      if (annualRentWeekly <= 0) return null
+      return calculateRealROI({
+        price: p,
+        annualRentOverride: annualRentWeekly,
+        maintenanceRate: maintenanceRate / 100,
+        annualCondoFees: Number(annualCondoFees) || 0,
+      })
+    }
+
     const r = Number(rent)
-    if (!p || !r || p <= 0 || r <= 0) return null
+    if (!r || r <= 0) return null
     return calculateRealROI({
       price: p,
       estimatedMonthlyRent: r,
@@ -55,10 +99,10 @@ export default function CalcolatoreROIPage() {
       maintenanceRate: maintenanceRate / 100,
       annualCondoFees: Number(annualCondoFees) || 0,
     })
-  }, [price, rent, vacancyRate, maintenanceRate, annualCondoFees])
+  }, [price, rent, weeklyRates, annualRentWeekly, vacancyRate, maintenanceRate, annualCondoFees, rentalMode])
 
   const cityAvgRoi = useMemo(() => {
-    if (!city) return null
+    if (!city || rentalMode === 'weekly') return null
     const marketPricePerSqm = (pricePerSqmByCity as Record<string, number>)[city] ?? 2000
     const rentPerSqm = (rentByCity as Record<string, number>)[city] ?? 10
     const avg = calculateRealROI({
@@ -68,7 +112,7 @@ export default function CalcolatoreROIPage() {
       maintenanceRate: maintenanceRate / 100,
     })
     return avg.roi
-  }, [city, vacancyRate, maintenanceRate])
+  }, [city, vacancyRate, maintenanceRate, rentalMode])
 
   const badge = result ? roiBadge(result.roi) : null
 
@@ -134,7 +178,53 @@ export default function CalcolatoreROIPage() {
               />
             </label>
 
-            {/* Rent */}
+            {/* Condo fees — always visible */}
+            <label className="block sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-gray-600">Spese condominiali annue (€)</span>
+              <input
+                type="number"
+                placeholder="es. 1200 (opzionale)"
+                value={annualCondoFees}
+                onChange={(e) => setAnnualCondoFees(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* Rental mode + rent inputs */}
+        <div className="border-b border-gray-100 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Modalità affitto
+            </h2>
+            <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setRentalMode('monthly')}
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                  rentalMode === 'monthly'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                Mensile
+              </button>
+              <button
+                type="button"
+                onClick={() => setRentalMode('weekly')}
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                  rentalMode === 'weekly'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                A settimane
+              </button>
+            </div>
+          </div>
+
+          {rentalMode === 'monthly' && (
             <label className="block">
               <span className="mb-1 flex items-center justify-between text-xs font-medium text-gray-600">
                 <span>Affitto mensile (€)</span>
@@ -162,19 +252,57 @@ export default function CalcolatoreROIPage() {
                 </button>
               )}
             </label>
+          )}
 
-            {/* Condo fees */}
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-gray-600">Spese condominiali annue (€)</span>
-              <input
-                type="number"
-                placeholder="es. 1200 (opzionale)"
-                value={annualCondoFees}
-                onChange={(e) => setAnnualCondoFees(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
-              />
-            </label>
-          </div>
+          {rentalMode === 'weekly' && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-xs text-gray-500">Inserisci tariffa e settimane per ogni mese affittato. Lascia vuoto i mesi non affittati.</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {Array.from({ length: 12 }, (_, i) => {
+                  const key = String(i + 1)
+                  const entry = weeklyRates[key]
+                  return (
+                    <div key={key} className="rounded-xl border border-gray-100 bg-gray-50 p-2.5">
+                      <p className="mb-2 text-xs font-semibold text-gray-700">{MONTH_NAMES[i]}</p>
+                      <div className="space-y-1.5">
+                        <div>
+                          <label className="text-[10px] text-gray-400">€/sett.</label>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="—"
+                            className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs focus:border-blue-400 focus:outline-none"
+                            value={entry?.rate ?? ''}
+                            onChange={(e) => updateWeeklyRate(key, 'rate', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-400">Settimane</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="5"
+                            placeholder="4"
+                            className="w-full rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs focus:border-blue-400 focus:outline-none"
+                            value={entry?.weeks ?? ''}
+                            onChange={(e) => updateWeeklyRate(key, 'weeks', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              {annualRentWeekly > 0 && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Reddito lordo stimato: <span className="font-semibold text-gray-700">€{annualRentWeekly.toLocaleString('it-IT')}/anno</span>
+                  {' · '}{weeksRented} settimane affittate
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Assumption sliders */}
@@ -183,17 +311,19 @@ export default function CalcolatoreROIPage() {
             Parametri
           </h2>
           <div className="grid gap-5 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 flex items-center justify-between text-xs font-medium text-gray-600">
-                <span>Tasso sfitto</span>
-                <span className="text-gray-900">{vacancyRate}%</span>
-              </span>
-              <input
-                type="range" min={0} max={20} value={vacancyRate}
-                onChange={(e) => setVacancyRate(Number(e.target.value))}
-                className="w-full accent-blue-600"
-              />
-            </label>
+            {rentalMode === 'monthly' && (
+              <label className="block">
+                <span className="mb-1 flex items-center justify-between text-xs font-medium text-gray-600">
+                  <span>Tasso sfitto</span>
+                  <span className="text-gray-900">{vacancyRate}%</span>
+                </span>
+                <input
+                  type="range" min={0} max={20} value={vacancyRate}
+                  onChange={(e) => setVacancyRate(Number(e.target.value))}
+                  className="w-full accent-blue-600"
+                />
+              </label>
+            )}
             <label className="block">
               <span className="mb-1 flex items-center justify-between text-xs font-medium text-gray-600">
                 <span>Costi manutenzione</span>
@@ -208,6 +338,7 @@ export default function CalcolatoreROIPage() {
           </div>
           <p className="mt-3 text-xs text-gray-400">
             Cedolare secca 21% già inclusa nel calcolo.
+            {rentalMode === 'weekly' && ' In modalità settimanale il tasso sfitto è gestito dai mesi vuoti.'}
           </p>
         </div>
 
@@ -254,10 +385,14 @@ export default function CalcolatoreROIPage() {
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Affitto lordo annuo</span>
-                  <span className="font-medium text-gray-900">€{(Number(rent) * 12).toLocaleString('it-IT')}</span>
+                  <span className="font-medium text-gray-900">
+                    €{(rentalMode === 'weekly' ? annualRentWeekly : Number(rent) * 12).toLocaleString('it-IT')}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Affitto effettivo (dopo sfitto)</span>
+                  <span className="text-gray-500">
+                    {rentalMode === 'weekly' ? 'Affitto effettivo' : 'Affitto effettivo (dopo sfitto)'}
+                  </span>
                   <span className="font-medium text-gray-900">€{result.effectiveRent.toLocaleString('it-IT')}</span>
                 </div>
                 <div className="flex justify-between">
@@ -275,7 +410,9 @@ export default function CalcolatoreROIPage() {
           </div>
         ) : (
           <div className="p-6 text-center text-sm text-gray-400">
-            Inserisci prezzo e affitto per vedere i risultati.
+            {rentalMode === 'weekly'
+              ? 'Inserisci prezzo e almeno un mese con tariffa per vedere i risultati.'
+              : 'Inserisci prezzo e affitto per vedere i risultati.'}
           </div>
         )}
       </div>
