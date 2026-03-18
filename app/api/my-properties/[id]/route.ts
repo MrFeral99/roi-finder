@@ -29,6 +29,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       vacancyRate: body.vacancyRate != null ? Number(body.vacancyRate) : undefined,
       maintenanceRate: body.maintenanceRate != null ? Number(body.maintenanceRate) : undefined,
       annualCondoFees: body.annualCondoFees != null ? Number(body.annualCondoFees) : undefined,
+      rentalMode: body.rentalMode,
+      weeklyRates: body.weeklyRates ?? null,
     },
   })
 

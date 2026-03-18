@@ -1,11 +1,22 @@
 export interface InvestmentInput {
   price: number
-  estimatedMonthlyRent: number
-  vacancyRate?: number      // 0–1, default 0.08
-  maintenanceRate?: number  // 0–1, default 0.10
-  taxRate?: number          // 0–1, default 0.21 (cedolare secca)
-  annualCondoFees?: number  // €, default 0
-  annualOtherCosts?: number // €, default 0
+  estimatedMonthlyRent?: number
+  annualRentOverride?: number   // if present, bypasses estimatedMonthlyRent * 12
+  vacancyRate?: number          // 0–1, default 0.08
+  maintenanceRate?: number      // 0–1, default 0.10
+  taxRate?: number              // 0–1, default 0.21 (cedolare secca)
+  annualCondoFees?: number      // €, default 0
+  annualOtherCosts?: number     // €, default 0
+}
+
+export interface WeeklyRate { weeks: number; rate: number }
+
+export function weeklyRatesToAnnualRent(
+  rates: Record<string, WeeklyRate | null>
+): number {
+  return Object.values(rates).reduce(
+    (sum, m) => sum + (m ? m.weeks * m.rate : 0), 0
+  )
 }
 
 export interface InvestmentResult {
@@ -19,7 +30,8 @@ export interface InvestmentResult {
 export function calculateRealROI(input: InvestmentInput): InvestmentResult {
   const {
     price,
-    estimatedMonthlyRent,
+    estimatedMonthlyRent = 0,
+    annualRentOverride,
     vacancyRate = 0.08,
     maintenanceRate = 0.10,
     taxRate = 0.21,
@@ -27,8 +39,10 @@ export function calculateRealROI(input: InvestmentInput): InvestmentResult {
     annualOtherCosts = 0,
   } = input
 
-  const annualRent = estimatedMonthlyRent * 12
-  const effectiveRent = annualRent * (1 - vacancyRate)
+  const annualRent = annualRentOverride ?? estimatedMonthlyRent * 12
+  const effectiveRent = annualRentOverride != null
+    ? annualRentOverride
+    : annualRent * (1 - vacancyRate)
   const maintenanceCost = effectiveRent * maintenanceRate
   const taxes = effectiveRent * taxRate
   const totalCosts = maintenanceCost + taxes + annualCondoFees + annualOtherCosts

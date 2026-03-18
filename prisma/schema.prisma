@@ -40,6 +40,8 @@ model UserProperty {
   vacancyRate      Float    @default(8)
   maintenanceRate  Float    @default(10)
   annualCondoFees  Float    @default(0)
+  rentalMode       String   @default("monthly")
+  weeklyRates      Json?
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

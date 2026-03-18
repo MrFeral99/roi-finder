@@ -1,10 +1,18 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
-import { calculateRealROI } from '@/lib/investment'
+import { calculateRealROI, weeklyRatesToAnnualRent, WeeklyRate } from '@/lib/investment'
 import rentByCity from '@/data/rentByCity.json'
 import pricePerSqmByCity from '@/data/pricePerSqmByCity.json'
 
 const CITIES = Object.keys(rentByCity as Record<string, number>).sort()
+
+const MONTH_NAMES = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
+
+function emptyWeeklyRates(): Record<string, WeeklyRate | null> {
+  const r: Record<string, WeeklyRate | null> = {}
+  for (let i = 1; i <= 12; i++) r[String(i)] = null
+  return r
+}
 
 interface UserProperty {
   id: string
@@ -21,6 +29,8 @@ interface UserProperty {
   vacancyRate: number
   maintenanceRate: number
   annualCondoFees: number
+  rentalMode: string
+  weeklyRates?: Record<string, WeeklyRate | null> | null
   createdAt: string
 }
 
@@ -38,6 +48,8 @@ const EMPTY_FORM = {
   vacancyRate: 8,
   maintenanceRate: 10,
   annualCondoFees: '',
+  rentalMode: 'monthly' as 'monthly' | 'weekly',
+  weeklyRates: emptyWeeklyRates(),
 }
 
 function roiColor(roi: number) {
@@ -59,6 +71,15 @@ function statusConfig(status: string) {
 }
 
 function calcROI(p: UserProperty) {
+  if (p.rentalMode === 'weekly' && p.weeklyRates) {
+    const annualRent = weeklyRatesToAnnualRent(p.weeklyRates)
+    return calculateRealROI({
+      price: p.price,
+      annualRentOverride: annualRent,
+      maintenanceRate: p.maintenanceRate / 100,
+      annualCondoFees: p.annualCondoFees,
+    })
+  }
   return calculateRealROI({
     price: p.price,
     estimatedMonthlyRent: p.monthlyRent,
@@ -66,6 +87,10 @@ function calcROI(p: UserProperty) {
     maintenanceRate: p.maintenanceRate / 100,
     annualCondoFees: p.annualCondoFees,
   })
+}
+
+function totalWeeksRented(rates: Record<string, WeeklyRate | null>): number {
+  return Object.values(rates).reduce((sum, m) => sum + (m ? m.weeks : 0), 0)
 }
 
 export default function MieProprietaPage() {
@@ -85,13 +110,14 @@ export default function MieProprietaPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Auto-fill rent
+  // Auto-fill rent (only in monthly mode)
   useEffect(() => {
+    if (form.rentalMode !== 'monthly') return
     if (!rentOverridden && form.city && form.sqm) {
       const rentPerSqm = (rentByCity as Record<string, number>)[form.city] ?? 10
       setForm((f) => ({ ...f, monthlyRent: String(Math.round(rentPerSqm * Number(f.sqm))) }))
     }
-  }, [form.city, form.sqm, rentOverridden])
+  }, [form.city, form.sqm, rentOverridden, form.rentalMode])
 
   // Auto-fill price (only if empty)
   useEffect(() => {
@@ -103,8 +129,21 @@ export default function MieProprietaPage() {
 
   const previewROI = useMemo(() => {
     const p = Number(form.price)
+    if (!p || p <= 0) return null
+
+    if (form.rentalMode === 'weekly') {
+      const annualRent = weeklyRatesToAnnualRent(form.weeklyRates)
+      if (annualRent <= 0) return null
+      return calculateRealROI({
+        price: p,
+        annualRentOverride: annualRent,
+        maintenanceRate: form.maintenanceRate / 100,
+        annualCondoFees: Number(form.annualCondoFees) || 0,
+      })
+    }
+
     const r = Number(form.monthlyRent)
-    if (!p || !r || p <= 0 || r <= 0) return null
+    if (!r || r <= 0) return null
     return calculateRealROI({
       price: p,
       estimatedMonthlyRent: r,
@@ -112,7 +151,7 @@ export default function MieProprietaPage() {
       maintenanceRate: form.maintenanceRate / 100,
       annualCondoFees: Number(form.annualCondoFees) || 0,
     })
-  }, [form.price, form.monthlyRent, form.vacancyRate, form.maintenanceRate, form.annualCondoFees])
+  }, [form.price, form.monthlyRent, form.vacancyRate, form.maintenanceRate, form.annualCondoFees, form.rentalMode, form.weeklyRates])
 
   // Portfolio summary — only "acquistato" properties
   const summary = useMemo(() => {
@@ -129,7 +168,7 @@ export default function MieProprietaPage() {
 
   function openAdd() {
     setEditingId(null)
-    setForm({ ...EMPTY_FORM })
+    setForm({ ...EMPTY_FORM, weeklyRates: emptyWeeklyRates() })
     setRentOverridden(false)
     setShowForm(true)
   }
@@ -150,9 +189,39 @@ export default function MieProprietaPage() {
       vacancyRate: p.vacancyRate,
       maintenanceRate: p.maintenanceRate,
       annualCondoFees: p.annualCondoFees ? String(p.annualCondoFees) : '',
+      rentalMode: (p.rentalMode as 'monthly' | 'weekly') ?? 'monthly',
+      weeklyRates: p.weeklyRates ?? emptyWeeklyRates(),
     })
     setRentOverridden(true)
     setShowForm(true)
+  }
+
+  function updateWeeklyRate(month: string, field: 'weeks' | 'rate', value: string) {
+    setForm((f) => {
+      const current = f.weeklyRates[month]
+      if (value === '') {
+        // If both would be empty, set null
+        const otherField = field === 'weeks' ? 'rate' : 'weeks'
+        const otherVal = current ? current[otherField] : undefined
+        if (!otherVal) {
+          return { ...f, weeklyRates: { ...f.weeklyRates, [month]: null } }
+        }
+        return {
+          ...f,
+          weeklyRates: {
+            ...f.weeklyRates,
+            [month]: { ...(current ?? { weeks: 4, rate: 0 }), [field]: 0 },
+          },
+        }
+      }
+      return {
+        ...f,
+        weeklyRates: {
+          ...f.weeklyRates,
+          [month]: { ...(current ?? { weeks: 4, rate: 0 }), [field]: Number(value) },
+        },
+      }
+    })
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -164,7 +233,7 @@ export default function MieProprietaPage() {
       address: form.address || null,
       price: Number(form.price),
       sqm: Number(form.sqm),
-      monthlyRent: Number(form.monthlyRent),
+      monthlyRent: form.rentalMode === 'monthly' ? Number(form.monthlyRent) : 0,
       status: form.status,
       purchaseDate: form.purchaseDate || null,
       acquisitionCosts: form.acquisitionCosts ? Number(form.acquisitionCosts) : null,
@@ -172,6 +241,8 @@ export default function MieProprietaPage() {
       vacancyRate: form.vacancyRate,
       maintenanceRate: form.maintenanceRate,
       annualCondoFees: Number(form.annualCondoFees) || 0,
+      rentalMode: form.rentalMode,
+      weeklyRates: form.rentalMode === 'weekly' ? form.weeklyRates : null,
     }
 
     try {
@@ -319,18 +390,6 @@ export default function MieProprietaPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">Affitto mensile (€) *</label>
-                <input
-                  required
-                  type="number"
-                  min="1"
-                  className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-                  placeholder="800"
-                  value={form.monthlyRent}
-                  onChange={(e) => { setForm((f) => ({ ...f, monthlyRent: e.target.value })); setRentOverridden(true) }}
-                />
-              </div>
-              <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">Stato</label>
                 <select
                   className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
@@ -375,33 +434,138 @@ export default function MieProprietaPage() {
               </div>
             </div>
 
-            {/* Sliders */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 flex justify-between text-xs font-medium text-gray-600">
-                  <span>Vacancy rate</span>
-                  <span className="font-semibold text-gray-900">{form.vacancyRate}%</span>
-                </label>
-                <input
-                  type="range" min="0" max="30" step="1"
-                  className="w-full accent-blue-600"
-                  value={form.vacancyRate}
-                  onChange={(e) => setForm((f) => ({ ...f, vacancyRate: Number(e.target.value) }))}
-                />
-              </div>
-              <div>
-                <label className="mb-1 flex justify-between text-xs font-medium text-gray-600">
-                  <span>Manutenzione</span>
-                  <span className="font-semibold text-gray-900">{form.maintenanceRate}%</span>
-                </label>
-                <input
-                  type="range" min="0" max="30" step="1"
-                  className="w-full accent-blue-600"
-                  value={form.maintenanceRate}
-                  onChange={(e) => setForm((f) => ({ ...f, maintenanceRate: Number(e.target.value) }))}
-                />
+            {/* Rental mode toggle */}
+            <div>
+              <label className="mb-2 block text-xs font-medium text-gray-600">Modalità affitto</label>
+              <div className="inline-flex rounded-xl border border-gray-300 bg-white p-1 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, rentalMode: 'monthly' }))}
+                  className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+                    form.rentalMode === 'monthly'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  Mensile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, rentalMode: 'weekly' }))}
+                  className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+                    form.rentalMode === 'weekly'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  A settimane
+                </button>
               </div>
             </div>
+
+            {/* Monthly-specific fields */}
+            {form.rentalMode === 'monthly' && (
+              <>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Affitto mensile (€) *</label>
+                    <input
+                      required
+                      type="number"
+                      min="1"
+                      className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                      placeholder="800"
+                      value={form.monthlyRent}
+                      onChange={(e) => { setForm((f) => ({ ...f, monthlyRent: e.target.value })); setRentOverridden(true) }}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 flex justify-between text-xs font-medium text-gray-600">
+                      <span>Vacancy rate</span>
+                      <span className="font-semibold text-gray-900">{form.vacancyRate}%</span>
+                    </label>
+                    <input
+                      type="range" min="0" max="30" step="1"
+                      className="w-full accent-blue-600"
+                      value={form.vacancyRate}
+                      onChange={(e) => setForm((f) => ({ ...f, vacancyRate: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 flex justify-between text-xs font-medium text-gray-600">
+                      <span>Manutenzione</span>
+                      <span className="font-semibold text-gray-900">{form.maintenanceRate}%</span>
+                    </label>
+                    <input
+                      type="range" min="0" max="30" step="1"
+                      className="w-full accent-blue-600"
+                      value={form.maintenanceRate}
+                      onChange={(e) => setForm((f) => ({ ...f, maintenanceRate: Number(e.target.value) }))}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Weekly-specific fields */}
+            {form.rentalMode === 'weekly' && (
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-xs font-medium text-gray-600">Tariffe settimanali per mese</label>
+                  <span className="text-xs text-gray-400">Lascia vuoto se il mese non è affittato</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const key = String(i + 1)
+                    const entry = form.weeklyRates[key]
+                    return (
+                      <div key={key} className="rounded-xl border border-gray-200 bg-white p-3">
+                        <p className="mb-2 text-xs font-semibold text-gray-700">{MONTH_NAMES[i]}</p>
+                        <div className="space-y-1.5">
+                          <div>
+                            <label className="text-[10px] text-gray-400">€/settimana</label>
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="—"
+                              className="w-full rounded-lg border border-gray-200 px-2 py-1 text-xs focus:border-blue-400 focus:outline-none"
+                              value={entry?.rate ?? ''}
+                              onChange={(e) => updateWeeklyRate(key, 'rate', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-400">Settimane</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="5"
+                              placeholder="4"
+                              className="w-full rounded-lg border border-gray-200 px-2 py-1 text-xs focus:border-blue-400 focus:outline-none"
+                              value={entry?.weeks ?? ''}
+                              onChange={(e) => updateWeeklyRate(key, 'weeks', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="mt-2">
+                  <label className="mb-1 flex justify-between text-xs font-medium text-gray-600">
+                    <span>Manutenzione</span>
+                    <span className="font-semibold text-gray-900">{form.maintenanceRate}%</span>
+                  </label>
+                  <input
+                    type="range" min="0" max="30" step="1"
+                    className="w-full accent-blue-600"
+                    value={form.maintenanceRate}
+                    onChange={(e) => setForm((f) => ({ ...f, maintenanceRate: Number(e.target.value) }))}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Note */}
             <div>
@@ -419,6 +583,12 @@ export default function MieProprietaPage() {
             {previewROI && (
               <div className="rounded-xl border border-blue-200 bg-white p-4">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-400">Anteprima ROI</p>
+                {form.rentalMode === 'weekly' && (
+                  <p className="mb-2 text-xs text-gray-500">
+                    Reddito lordo annuo: <span className="font-semibold text-gray-700">€{weeklyRatesToAnnualRent(form.weeklyRates).toLocaleString('it-IT')}</span>
+                    {' · '}{totalWeeksRented(form.weeklyRates)} settimane affittate
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-4">
                   <div>
                     <p className="text-xs text-gray-500">ROI netto</p>
@@ -491,6 +661,8 @@ export default function MieProprietaPage() {
               {props.map((p) => {
                 const roi = calcROI(p)
                 const badge = roiBadge(roi.roi)
+                const isWeekly = p.rentalMode === 'weekly' && p.weeklyRates
+                const weeksRented = isWeekly ? totalWeeksRented(p.weeklyRates!) : null
                 return (
                   <div
                     key={p.id}
@@ -501,7 +673,11 @@ export default function MieProprietaPage() {
                         <h3 className="font-semibold text-gray-900">{p.title}</h3>
                         <p className="text-sm text-gray-500">{p.city}{p.address ? ` · ${p.address}` : ''}</p>
                         <p className="mt-0.5 text-xs text-gray-400">
-                          {p.sqm} m² · €{p.price.toLocaleString('it-IT')} · {p.monthlyRent.toLocaleString('it-IT')} €/mese
+                          {p.sqm} m² · €{p.price.toLocaleString('it-IT')} ·{' '}
+                          {isWeekly
+                            ? <span>{weeksRented} settimane/anno · tariffe settimanali</span>
+                            : <span>{p.monthlyRent.toLocaleString('it-IT')} €/mese</span>
+                          }
                         </p>
                       </div>
                       <div className="flex items-start gap-3">
