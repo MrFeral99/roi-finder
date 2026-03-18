@@ -1,11 +1,14 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { computeMetrics } from '@/lib/computeMetrics'
 import { getMarketPricePerSqm } from '@/lib/discountCalculator'
 import { AUCTION_MARKUP_MIN, AUCTION_MARKUP_MAX } from '@/lib/auctionEstimator'
 import OpportunityBadge from '@/components/OpportunityBadge'
 import WaitlistForm from '@/components/WaitlistForm'
+import SaveButton from '@/components/SaveButton'
 
 interface Props {
   params: { id: string }
@@ -21,6 +24,15 @@ export default async function PropertyDetailPage({ params }: Props) {
   const p = computeMetrics({ ...property, createdAt: property.createdAt.toISOString() })
   const marketPricePerSqm = getMarketPricePerSqm(p.city)
   const roiColor = p.roi > 8 ? 'text-green-600' : p.roi > 5 ? 'text-yellow-600' : 'text-gray-900'
+
+  const session = await getServerSession(authOptions)
+  let isSaved = false
+  if (session?.user?.id) {
+    const saved = await prisma.savedProperty.findUnique({
+      where: { userId_propertyId: { userId: session.user.id, propertyId: params.id } },
+    })
+    isSaved = !!saved
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -41,14 +53,19 @@ export default async function PropertyDetailPage({ params }: Props) {
               <h1 className="mt-1 text-xl font-bold text-gray-900">{p.title}</h1>
               <p className="mt-1 text-sm text-gray-500">{p.address}</p>
             </div>
-            <div className="text-right shrink-0">
-              {p.isAuction && (
-                <p className="text-xs font-medium text-purple-600">Base d&apos;asta</p>
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="text-right">
+                {p.isAuction && (
+                  <p className="text-xs font-medium text-purple-600">Base d&apos;asta</p>
+                )}
+                <p className="text-2xl font-bold text-gray-900">
+                  €{p.price.toLocaleString('it-IT')}
+                </p>
+                <p className="text-sm text-gray-500">{p.sqm} m²</p>
+              </div>
+              {session?.user?.id && (
+                <SaveButton propertyId={params.id} initialSaved={isSaved} />
               )}
-              <p className="text-2xl font-bold text-gray-900">
-                €{p.price.toLocaleString('it-IT')}
-              </p>
-              <p className="text-sm text-gray-500">{p.sqm} m²</p>
             </div>
           </div>
           <div className="mt-4">

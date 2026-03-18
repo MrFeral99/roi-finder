@@ -31,10 +31,23 @@ export default function PropertyCard({ property, isSaved, onSaveToggle }: Props)
               {onSaveToggle && (
                 <button
                   onClick={(e) => { e.preventDefault(); onSaveToggle(id) }}
-                  className="text-lg leading-none transition hover:scale-110"
-                  title={isSaved ? 'Rimuovi dai salvati' : 'Salva'}
+                  title={isSaved ? 'Rimuovi dai salvati' : 'Salva opportunità'}
+                  className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs font-medium transition ${
+                    isSaved
+                      ? 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
                 >
-                  {isSaved ? '🔖' : '🏷️'}
+                  {isSaved ? (
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 2a2 2 0 0 0-2 2v18l8-4 8 4V4a2 2 0 0 0-2-2H6z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2a2 2 0 0 0-2 2v18l8-4 8 4V4a2 2 0 0 0-2-2H6z" />
+                    </svg>
+                  )}
+                  {isSaved ? 'Salvata' : 'Salva'}
                 </button>
               )}
               <div className="text-right">
