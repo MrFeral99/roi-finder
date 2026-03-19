@@ -34,6 +34,7 @@ interface UserProperty {
   mortgageAmount?: number | null
   mortgageRate?: number | null
   mortgageDurationYears?: number | null
+  salePrice?: number | null
   createdAt: string
 }
 
@@ -44,7 +45,7 @@ const EMPTY_FORM = {
   price: '',
   sqm: '',
   monthlyRent: '',
-  status: 'valutazione',
+  status: 'acquistato',
   purchaseDate: '',
   acquisitionCosts: '',
   notes: '',
@@ -57,6 +58,7 @@ const EMPTY_FORM = {
   mortgageAmount: '',
   mortgageRate: '',
   mortgageDurationYears: '',
+  salePrice: '',
 }
 
 function roiColor(roi: number) {
@@ -72,9 +74,8 @@ function roiBadge(roi: number) {
 }
 
 function statusConfig(status: string) {
-  if (status === 'acquistato') return { label: 'ACQUISTATO', dot: '🟢', bg: 'bg-green-50', border: 'border-green-200' }
-  if (status === 'scartato') return { label: 'SCARTATO', dot: '⚫', bg: 'bg-gray-50', border: 'border-gray-200' }
-  return { label: 'IN VALUTAZIONE', dot: '🔵', bg: 'bg-blue-50', border: 'border-blue-200' }
+  if (status === 'venduto') return { label: 'VENDUTO', dot: '💰', bg: 'bg-purple-50', border: 'border-purple-200' }
+  return { label: 'ACQUISTATO', dot: '🟢', bg: 'bg-green-50', border: 'border-green-200' }
 }
 
 function calcROI(p: UserProperty) {
@@ -202,6 +203,7 @@ export default function MieProprietaPage() {
       mortgageAmount: p.mortgageAmount != null ? String(p.mortgageAmount) : '',
       mortgageRate: p.mortgageRate != null ? String(p.mortgageRate) : '',
       mortgageDurationYears: p.mortgageDurationYears != null ? String(p.mortgageDurationYears) : '',
+      salePrice: p.salePrice != null ? String(p.salePrice) : '',
     })
     setRentOverridden(true)
     setShowForm(true)
@@ -257,6 +259,7 @@ export default function MieProprietaPage() {
       mortgageAmount: form.mortgageAmount ? Number(form.mortgageAmount) : null,
       mortgageRate: form.mortgageRate ? Number(form.mortgageRate) : null,
       mortgageDurationYears: form.mortgageDurationYears ? Number(form.mortgageDurationYears) : null,
+      salePrice: form.salePrice ? Number(form.salePrice) : null,
     }
 
     try {
@@ -293,8 +296,7 @@ export default function MieProprietaPage() {
 
   const groups = [
     { key: 'acquistato', props: properties.filter((p) => p.status === 'acquistato') },
-    { key: 'valutazione', props: properties.filter((p) => p.status === 'valutazione') },
-    { key: 'scartato', props: properties.filter((p) => p.status === 'scartato') },
+    { key: 'venduto', props: properties.filter((p) => p.status === 'venduto') },
   ]
 
   return (
@@ -410,11 +412,23 @@ export default function MieProprietaPage() {
                   value={form.status}
                   onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
                 >
-                  <option value="valutazione">🔵 In valutazione</option>
                   <option value="acquistato">🟢 Acquistato</option>
-                  <option value="scartato">⚫ Scartato</option>
+                  <option value="venduto">💰 Venduto</option>
                 </select>
               </div>
+              {form.status === 'venduto' && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">Prezzo di vendita (€)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                    placeholder="200000"
+                    value={form.salePrice}
+                    onChange={(e) => setForm((f) => ({ ...f, salePrice: e.target.value }))}
+                  />
+                </div>
+              )}
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-600">Data acquisto</label>
                 <input
@@ -793,6 +807,31 @@ export default function MieProprietaPage() {
                         </p>
                       )
                     })()}
+                    {p.status === 'venduto' && (
+                      <div className="mt-3 flex gap-6">
+                        {p.salePrice ? (
+                          <>
+                            <div>
+                              <p className="text-xs text-gray-500">Prezzo di vendita</p>
+                              <p className="font-bold text-gray-900">€{p.salePrice.toLocaleString('it-IT')}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-gray-500">Guadagno netto</p>
+                              {(() => {
+                                const gain = p.salePrice - p.price - (p.acquisitionCosts ?? 0)
+                                return (
+                                  <p className={`font-bold ${gain >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    {gain >= 0 ? '+' : ''}€{gain.toLocaleString('it-IT')}
+                                  </p>
+                                )
+                              })()}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic">— Prezzo di vendita non inserito</p>
+                        )}
+                      </div>
+                    )}
                     {p.notes && (
                       <p className="mt-2 text-xs text-gray-500 italic">{p.notes}</p>
                     )}

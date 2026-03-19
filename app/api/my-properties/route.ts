@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const {
     title, city, address, price, sqm, monthlyRent, status,
     purchaseDate, acquisitionCosts, notes, vacancyRate, maintenanceRate, annualCondoFees,
-    rentalMode, weeklyRates, mortgageAmount, mortgageRate, mortgageDurationYears,
+    rentalMode, weeklyRates, mortgageAmount, mortgageRate, mortgageDurationYears, salePrice,
   } = body
 
   if (!title || !city || !price || !sqm) {
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
       price: Number(price),
       sqm: Number(sqm),
       monthlyRent: monthlyRent != null ? Number(monthlyRent) : 0,
-      status: status ?? 'valutazione',
+      status: status ?? 'acquistato',
+      salePrice: salePrice != null ? Number(salePrice) : null,
       purchaseDate: purchaseDate ?? null,
       acquisitionCosts: acquisitionCosts != null ? Number(acquisitionCosts) : null,
       notes: notes ?? null,

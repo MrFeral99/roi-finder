@@ -10,8 +10,7 @@ const NAV_LINKS = [
   { href: '/dashboard',     label: 'Dashboard',         icon: '📊' },
   { href: '/saved',         label: 'Salvate',           icon: '🔖' },
   { href: '/mie-proprieta', label: 'Le mie proprietà',  icon: '🏘️' },
-  { href: '/calcolatore',   label: 'Calcolatore ROI',   icon: '🧮' },
-  { href: '/account',       label: 'Account',           icon: '👤' },
+{ href: '/account',       label: 'Account',           icon: '👤' },
 ]
 
 export default function Header() {

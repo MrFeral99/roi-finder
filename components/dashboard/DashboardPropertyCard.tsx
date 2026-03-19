@@ -22,6 +22,9 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
   const [notes, setNotes] = useState<string>(property.notes ?? '')
   const [editingNotes, setEditingNotes] = useState(false)
   const [savingNotes, setSavingNotes] = useState(false)
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false)
+  const [finalPrice, setFinalPrice] = useState(String(property.price))
+  const [purchasing, setPurchasing] = useState(false)
 
   async function handleStatusChange(newStatus: WorkflowStatus) {
     setStatus(newStatus)
@@ -47,6 +50,32 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
   async function handleUnsave() {
     await fetch(`/api/saved/${property.id}`, { method: 'DELETE' })
     onUnsave(property.id)
+  }
+
+  async function handlePurchase() {
+    setPurchasing(true)
+    await fetch('/api/my-properties', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: property.title,
+        city: property.city,
+        address: property.address ?? null,
+        price: Number(finalPrice),
+        sqm: property.sqm,
+        monthlyRent: property.estimatedRent,
+        status: 'acquistato',
+        notes: property.notes ?? null,
+        vacancyRate: 8,
+        maintenanceRate: 10,
+        annualCondoFees: 0,
+        rentalMode: 'monthly',
+      }),
+    })
+    await fetch(`/api/saved/${property.id}`, { method: 'DELETE' })
+    onUnsave(property.id)
+    setPurchasing(false)
+    setShowPurchaseModal(false)
   }
 
   return (
@@ -102,6 +131,48 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
+
+      {/* Purchase button (DECISION only) */}
+      {status === 'DECISION' && (
+        <button
+          onClick={() => { setFinalPrice(String(property.price)); setShowPurchaseModal(true) }}
+          className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
+        >
+          🏠 Acquista questa proprietà
+        </button>
+      )}
+
+      {/* Purchase modal */}
+      {showPurchaseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-base font-semibold text-gray-900">Conferma acquisto</h3>
+            <label className="mb-1 block text-xs font-medium text-gray-600">Prezzo finale d&apos;acquisto (€)</label>
+            <input
+              type="number"
+              min="1"
+              className="mb-4 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+              value={finalPrice}
+              onChange={(e) => setFinalPrice(e.target.value)}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={handlePurchase}
+                disabled={purchasing}
+                className="flex-1 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                {purchasing ? 'Acquisto...' : 'Conferma acquisto'}
+              </button>
+              <button
+                onClick={() => setShowPurchaseModal(false)}
+                className="flex-1 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Notes */}
       {editingNotes ? (

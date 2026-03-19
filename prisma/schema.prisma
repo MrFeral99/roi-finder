@@ -33,7 +33,8 @@ model UserProperty {
   price            Float
   sqm              Float
   monthlyRent      Float
-  status           String   @default("valutazione") // "valutazione" | "acquistato" | "scartato"
+  status           String   @default("acquistato") // "acquistato" | "venduto"
+  salePrice        Float?
   purchaseDate     String?
   acquisitionCosts Float?
   notes            String?

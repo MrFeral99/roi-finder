@@ -34,6 +34,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       mortgageAmount: body.mortgageAmount ?? null,
       mortgageRate: body.mortgageRate ?? null,
       mortgageDurationYears: body.mortgageDurationYears ?? null,
+      salePrice: body.salePrice != null ? Number(body.salePrice) : null,
     },
   })
 
