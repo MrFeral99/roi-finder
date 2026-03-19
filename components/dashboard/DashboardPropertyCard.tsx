@@ -24,6 +24,8 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
   const [savingNotes, setSavingNotes] = useState(false)
   const [showPurchaseModal, setShowPurchaseModal] = useState(false)
   const [finalPrice, setFinalPrice] = useState(String(property.price))
+  const [purchaseDate, setPurchaseDate] = useState('')
+  const [purchaseNotes, setPurchaseNotes] = useState(property.notes ?? '')
   const [purchasing, setPurchasing] = useState(false)
 
   async function handleStatusChange(newStatus: WorkflowStatus) {
@@ -65,7 +67,8 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
         sqm: property.sqm,
         monthlyRent: property.estimatedRent,
         status: 'acquistato',
-        notes: property.notes ?? null,
+        purchaseDate: purchaseDate || null,
+        notes: purchaseNotes || null,
         vacancyRate: 8,
         maintenanceRate: 10,
         annualCondoFees: 0,
@@ -135,7 +138,7 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
       {/* Purchase button (DECISION only) */}
       {status === 'DECISION' && (
         <button
-          onClick={() => { setFinalPrice(String(property.price)); setShowPurchaseModal(true) }}
+          onClick={() => { setFinalPrice(String(property.price)); setPurchaseDate(''); setPurchaseNotes(property.notes ?? ''); setShowPurchaseModal(true) }}
           className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
         >
           🏠 Acquista questa proprietà
@@ -147,14 +150,37 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="mb-4 text-base font-semibold text-gray-900">Conferma acquisto</h3>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Prezzo finale d&apos;acquisto (€)</label>
-            <input
-              type="number"
-              min="1"
-              className="mb-4 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-              value={finalPrice}
-              onChange={(e) => setFinalPrice(e.target.value)}
-            />
+            <div className="mb-3 space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Prezzo finale d&apos;acquisto (€)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                  value={finalPrice}
+                  onChange={(e) => setFinalPrice(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Data acquisto</label>
+                <input
+                  type="date"
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                  value={purchaseDate}
+                  onChange={(e) => setPurchaseDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Note</label>
+                <textarea
+                  rows={3}
+                  placeholder="Note personali..."
+                  className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm resize-none focus:border-blue-400 focus:outline-none"
+                  value={purchaseNotes}
+                  onChange={(e) => setPurchaseNotes(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={handlePurchase}
