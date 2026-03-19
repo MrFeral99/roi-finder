@@ -25,7 +25,11 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(curl:*)",
-      "Bash(npm list:*)"
+      "Bash(npm list:*)",
+      "Bash(PGPASSWORD='NQ&3N@9V27z+tZa' psql \"postgresql://postgres.yrdttgayayjpluopmvvu@aws-1-eu-west-1.pooler.supabase.com:5432/postgres\" -c 'SELECT w.email, w.city, w.\"\"createdAt\"\" FROM \"\"WaitlistUser\"\" w WHERE w.email NOT IN \\(SELECT email FROM \"\"User\"\"\\) ORDER BY w.\"\"createdAt\"\";')",
+      "Bash(SMTP_USER=\"dealestateroi@libero.it\" SMTP_PASSWORD=\"myWbis-fymbyq-4wedde\" npx tsx scripts/sendUpdateEmail.ts)",
+      "Bash(npx tsc:*)",
+      "Bash(ls /Users/salvatorecorsa/Desktop/Progetti/roi-finder/app/api/my-properties/[id]/)"
     ]
   }
 }
