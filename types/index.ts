@@ -30,3 +30,12 @@ export interface FilterParams {
   minROI?: number
   maxPrice?: number
 }
+
+export type WorkflowStatus = 'COLLECTION' | 'ANALYSIS' | 'DECISION' | 'REJECTED'
+
+export interface SavedPropertyWithDetails extends PropertyWithMetrics {
+  savedId: string
+  status: WorkflowStatus
+  notes: string | null
+  updatedAt: string
+}

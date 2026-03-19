@@ -65,7 +65,10 @@ model SavedProperty {
   userId     String
   user       User     @relation(fields: [userId], references: [id])
   propertyId String
+  notes      String?
+  status     String   @default("COLLECTION")
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([userId, propertyId])
 }

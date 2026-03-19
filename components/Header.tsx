@@ -7,6 +7,7 @@ import { useSession, signOut } from 'next-auth/react'
 
 const NAV_LINKS = [
   { href: '/properties',    label: 'Opportunità',      icon: '🏠' },
+  { href: '/dashboard',     label: 'Dashboard',         icon: '📊' },
   { href: '/saved',         label: 'Salvate',           icon: '🔖' },
   { href: '/mie-proprieta', label: 'Le mie proprietà',  icon: '🏘️' },
   { href: '/calcolatore',   label: 'Calcolatore ROI',   icon: '🧮' },
