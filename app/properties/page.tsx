@@ -6,6 +6,7 @@ import { PropertyWithMetrics, FilterParams } from '@/types'
 import PropertyCard from '@/components/PropertyCard'
 import Filters from '@/components/Filters'
 import WaitlistForm from '@/components/WaitlistForm'
+import { posthog } from '@/lib/posthog'
 
 const FREE_LIMIT = 5
 
@@ -114,7 +115,15 @@ export default function PropertiesPage() {
       {/* Filters + Sort */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex-1">
-          <Filters filters={filters} onChange={(f) => { setFilters(f); setPage(1) }} />
+          <Filters filters={filters} onChange={(f) => {
+            setFilters(f)
+            setPage(1)
+            posthog.capture('filters_applied', {
+              city: f.city ?? null,
+              min_roi: f.minROI ?? null,
+              max_price: f.maxPrice ?? null,
+            })
+          }} />
         </div>
         <div className="sm:mt-0">
           <label className="mb-1 block text-xs font-medium text-gray-600">Ordina per</label>
@@ -159,9 +168,11 @@ export default function PropertiesPage() {
                   if (savedIds.has(id)) {
                     await fetch(`/api/saved/${id}`, { method: 'DELETE' })
                     setSavedIds((prev) => { const s = new Set(prev); s.delete(id); return s })
+                    posthog.capture('property_unsaved', { property_id: id })
                   } else {
                     await fetch('/api/saved', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ propertyId: id }) })
                     setSavedIds((prev) => new Set(prev).add(id))
+                    posthog.capture('property_saved', { property_id: id })
                   }
                 } : undefined}
               />

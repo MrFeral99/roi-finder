@@ -24,6 +24,7 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^8.0.2",
     "playwright": "^1.58.2",
+    "posthog-js": "^1.363.1",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "resend": "^6.9.4"

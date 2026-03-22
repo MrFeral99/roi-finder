@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { posthog } from '@/lib/posthog'
 
 const PRICE_RANGES = [
   { value: '10-19', label: '€10 – €19 / mese' },
@@ -32,6 +33,11 @@ export default function TrialFeedbackModal({ onSubmitted }: Props) {
     })
 
     if (res.ok) {
+      posthog.capture('trial_feedback_submitted', {
+        score,
+        price_range: priceRange,
+        has_improvements: improvements.trim().length > 0,
+      })
       onSubmitted()
     } else {
       setError('Errore nel salvataggio. Riprova.')

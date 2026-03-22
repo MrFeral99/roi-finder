@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { posthog } from '@/lib/posthog'
 
 interface Props {
   propertyId: string
@@ -15,6 +16,7 @@ export default function SaveButton({ propertyId, initialSaved }: Props) {
     if (saved) {
       await fetch(`/api/saved/${propertyId}`, { method: 'DELETE' })
       setSaved(false)
+      posthog.capture('property_unsaved', { property_id: propertyId })
     } else {
       await fetch('/api/saved', {
         method: 'POST',
@@ -22,6 +24,7 @@ export default function SaveButton({ propertyId, initialSaved }: Props) {
         body: JSON.stringify({ propertyId }),
       })
       setSaved(true)
+      posthog.capture('property_saved', { property_id: propertyId })
     }
     setLoading(false)
   }

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import type { SavedPropertyWithDetails, WorkflowStatus } from '@/types'
 import StatusBadge from './StatusBadge'
+import { posthog } from '@/lib/posthog'
 
 const STATUS_OPTIONS: { value: WorkflowStatus; label: string }[] = [
   { value: 'COLLECTION', label: 'Da valutare' },
@@ -29,6 +30,11 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
   const [purchasing, setPurchasing] = useState(false)
 
   async function handleStatusChange(newStatus: WorkflowStatus) {
+    posthog.capture('dashboard_status_changed', {
+      property_id: property.id,
+      from_status: status,
+      to_status: newStatus,
+    })
     setStatus(newStatus)
     onStatusChange(property.id, newStatus)
     await fetch(`/api/saved/${property.id}`, {
@@ -76,6 +82,11 @@ export default function DashboardPropertyCard({ property, onStatusChange, onUnsa
       }),
     })
     await fetch(`/api/saved/${property.id}`, { method: 'DELETE' })
+    posthog.capture('property_purchased', {
+      property_id: property.id,
+      city: property.city,
+      price: Number(finalPrice),
+    })
     onUnsave(property.id)
     setPurchasing(false)
     setShowPurchaseModal(false)

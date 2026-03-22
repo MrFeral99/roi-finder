@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { posthog } from '@/lib/posthog'
 
 interface Props {
   variant?: 'hero' | 'inline' | 'gate'
@@ -26,6 +27,7 @@ export default function WaitlistForm({ variant = 'inline', defaultCity = '' }: P
       const data = await res.json()
 
       if (res.ok || res.status === 200) {
+        posthog.capture('waitlist_signup', { city: city.trim() || null, variant })
         setStatus('success')
         setMessage(data.message)
       } else {

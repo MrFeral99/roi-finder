@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import { calculateRealROI, calculateMortgage, weeklyRatesToAnnualRent, WeeklyRate } from '@/lib/investment'
+import { posthog } from '@/lib/posthog'
 import rentByCity from '@/data/rentByCity.json'
 import pricePerSqmByCity from '@/data/pricePerSqmByCity.json'
 
@@ -104,6 +105,17 @@ export default function CalcolatoreROIPage() {
       annualCondoFees: Number(annualCondoFees) || 0,
     })
   }, [price, rent, weeklyRates, annualRentWeekly, vacancyRate, maintenanceRate, annualCondoFees, rentalMode])
+
+  useEffect(() => {
+    if (!result) return
+    posthog.capture('roi_calculated', {
+      city: city || null,
+      price: Number(price),
+      roi: result.roi,
+      rental_mode: rentalMode,
+      mortgage_enabled: mortgageEnabled,
+    })
+  }, [result]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const cityAvgRoi = useMemo(() => {
     if (!city || rentalMode === 'weekly') return null

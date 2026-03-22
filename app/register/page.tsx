@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { posthog } from '@/lib/posthog'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -31,6 +32,7 @@ export default function RegisterPage() {
       return
     }
 
+    posthog.capture('user_registered', { email })
     // Auto-login after registration
     await signIn('credentials', { email, password, redirect: false })
     router.push('/onboarding')
